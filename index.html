@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>crosshair — a reticle for your screen</title>
+<meta name="description" content="A lightweight crosshair overlay for macOS. Lives in the menu bar.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0b0d;
+    --surface: #15181b;
+    --surface-hover: #1b1f23;
+    --line: #262b30;
+    --text: #ecEEEf;
+    --muted: #868f96;
+    --accent: #ff7a1a;
+    --accent-dim: #7a3d10;
+    --radius: 10px;
+  }
+
+  * { box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.5;
+  }
+
+  .mono {
+    font-family: 'JetBrains Mono', ui-monospace, 'SF Mono', monospace;
+  }
+
+  a { color: inherit; }
+
+  /* ---------- Background tick rule ---------- */
+  .tick-rule {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 0 24px;
+    height: 22px;
+    opacity: 0.5;
+  }
+  .tick-rule span {
+    width: 1px;
+    height: 8px;
+    background: var(--line);
+  }
+  .tick-rule span:nth-child(5n+1) { height: 14px; background: #3a4148; }
+
+  /* ---------- Hero ---------- */
+  .hero {
+    position: relative;
+    padding: 96px 24px 64px;
+    text-align: center;
+    overflow: hidden;
+  }
+
+  .reticle-wrap {
+    position: relative;
+    width: 168px;
+    height: 168px;
+    margin: 0 auto 40px;
+  }
+
+  .reticle-ring {
+    position: absolute;
+    inset: 0;
+    animation: spin 40s linear infinite;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .reticle-ring { animation: none; }
+  }
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
+  .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 20px;
+  }
+  .eyebrow::before, .eyebrow::after {
+    content: '';
+    width: 16px;
+    height: 1px;
+    background: var(--line);
+  }
+
+  h1 {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: clamp(32px, 6vw, 52px);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin: 0 0 16px;
+  }
+  h1 .dim { color: var(--muted); font-weight: 500; }
+
+  .lede {
+    max-width: 460px;
+    margin: 0 auto 40px;
+    color: var(--muted);
+    font-size: 16px;
+  }
+
+  /* ---------- Download button ---------- */
+  .download-card {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .btn-download {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--accent);
+    color: #17100a;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 600;
+    font-size: 15px;
+    padding: 15px 28px;
+    border-radius: var(--radius);
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    box-shadow: 0 0 0 0 rgba(255, 122, 26, 0);
+  }
+  .btn-download:hover:not([aria-disabled="true"]) {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 24px -8px rgba(255, 122, 26, 0.55);
+  }
+  .btn-download[aria-disabled="true"] {
+    background: var(--surface);
+    color: var(--muted);
+    cursor: progress;
+    border: 1px solid var(--line);
+  }
+  .btn-download .crosshair-icon {
+    flex-shrink: 0;
+  }
+  .btn-download .crosshair-icon line {
+    transition: transform 0.2s ease;
+    transform-origin: center;
+  }
+  .btn-download:hover:not([aria-disabled="true"]) .crosshair-icon line.h1 { transform: translateX(-2px); }
+  .btn-download:hover:not([aria-disabled="true"]) .crosshair-icon line.h2 { transform: translateX(2px); }
+  .btn-download:hover:not([aria-disabled="true"]) .crosshair-icon line.v1 { transform: translateY(-2px); }
+  .btn-download:hover:not([aria-disabled="true"]) .crosshair-icon line.v2 { transform: translateY(2px); }
+
+  .download-meta {
+    font-size: 13px;
+    color: var(--muted);
+  }
+  .download-meta a { color: var(--muted); text-decoration: underline; text-decoration-color: var(--line); text-underline-offset: 3px; }
+  .download-meta a:hover { color: var(--text); }
+
+  .sys-req {
+    font-size: 12px;
+    color: #565d63;
+  }
+
+  /* ---------- Sections ---------- */
+  section { padding: 56px 24px; }
+  .section-inner { max-width: 640px; margin: 0 auto; }
+
+  .section-head {
+    text-align: center;
+    margin-bottom: 32px;
+  }
+  .section-head .eyebrow { margin-bottom: 12px; }
+  .section-head h2 {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 22px;
+    font-weight: 600;
+    margin: 0 0 8px;
+  }
+  .section-head p {
+    color: var(--muted);
+    font-size: 14px;
+    margin: 0;
+  }
+
+  /* ---------- Donate ---------- */
+  .donate-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+  @media (max-width: 520px) {
+    .donate-grid { grid-template-columns: 1fr; }
+  }
+
+  .coin-btn {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 16px;
+    text-align: left;
+    cursor: pointer;
+    color: var(--text);
+    transition: background 0.15s ease, border-color 0.15s ease;
+  }
+  .coin-btn:hover { background: var(--surface-hover); border-color: #34393e; }
+  .coin-btn:active { transform: scale(0.99); }
+
+  .coin-glyph {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    font-size: 13px;
+  }
+  .coin-glyph.btc { background: rgba(247, 147, 26, 0.14); color: #f7931a; }
+  .coin-glyph.xmr { background: rgba(255, 102, 0, 0.14); color: #ff6600; }
+  .coin-glyph.sol { background: rgba(153, 69, 255, 0.16); color: #b57bff; }
+  .coin-glyph.usdt { background: rgba(38, 161, 123, 0.16); color: #26a17b; }
+
+  .coin-info { flex: 1; min-width: 0; }
+  .coin-name { font-size: 14px; font-weight: 600; margin-bottom: 3px; }
+  .coin-addr {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11.5px;
+    color: var(--muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+  }
+
+  .copy-indicator {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    flex-shrink: 0;
+    min-width: 52px;
+    text-align: right;
+  }
+  .coin-btn.copied .copy-indicator { color: var(--accent); }
+
+  /* ---------- Footer ---------- */
+  footer {
+    padding: 32px 24px 48px;
+    text-align: center;
+  }
+  footer p {
+    font-size: 12px;
+    color: #565d63;
+    margin: 0;
+  }
+  footer a { text-decoration: underline; text-decoration-color: var(--line); text-underline-offset: 3px; }
+  footer a:hover { color: var(--text); }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(12px);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    padding: 10px 16px;
+    border-radius: 8px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    z-index: 100;
+  }
+  .toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+</style>
+</head>
+<body>
+
+  <main class="hero">
+    <div class="reticle-wrap" aria-hidden="true">
+      <svg class="reticle-ring" width="168" height="168" viewBox="0 0 168 168" fill="none">
+        <circle cx="84" cy="84" r="70" stroke="#262b30" stroke-width="1"/>
+        <g stroke="#3a4148" stroke-width="1.5">
+          <line x1="84" y1="10" x2="84" y2="18"/>
+          <line x1="84" y1="150" x2="84" y2="158"/>
+          <line x1="10" y1="84" x2="18" y2="84"/>
+          <line x1="150" y1="84" x2="158" y2="84"/>
+          <line x1="33.5" y1="33.5" x2="39" y2="39"/>
+          <line x1="129" y1="129" x2="134.5" y2="134.5"/>
+          <line x1="33.5" y1="134.5" x2="39" y2="129"/>
+          <line x1="129" y1="39" x2="134.5" y2="33.5"/>
+        </g>
+      </svg>
+      <svg width="168" height="168" viewBox="0 0 168 168" fill="none" style="position:absolute;inset:0;">
+        <circle cx="84" cy="84" r="4" fill="var(--accent)"/>
+        <g stroke="var(--accent)" stroke-width="2" stroke-linecap="round">
+          <line x1="84" y1="34" x2="84" y2="68"/>
+          <line x1="84" y1="100" x2="84" y2="134"/>
+          <line x1="34" y1="84" x2="68" y2="84"/>
+          <line x1="100" y1="84" x2="134" y2="84"/>
+        </g>
+      </svg>
+    </div>
+
+    <div class="eyebrow">macos menu bar utility</div>
+    <h1>crosshair <span class="dim">/ cfwtt</span></h1>
+    <p class="lede">A precise reticle, centered on every screen, over every app. Lives quietly in the menu bar until you close it.</p>
+
+    <div class="download-card">
+      <a id="downloadBtn" class="btn-download" href="#" aria-disabled="true">
+        <svg class="crosshair-icon" width="18" height="18" viewBox="0 0 18 18" fill="none">
+          <g stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <line class="h1" x1="1" y1="9" x2="6" y2="9"/>
+            <line class="h2" x1="12" y1="9" x2="17" y2="9"/>
+            <line class="v1" x1="9" y1="1" x2="9" y2="6"/>
+            <line class="v2" x1="9" y1="12" x2="9" y2="17"/>
+          </g>
+        </svg>
+        <span id="downloadLabel">Checking latest release…</span>
+      </a>
+      <div class="download-meta" id="downloadMeta">&nbsp;</div>
+      <div class="sys-req">Requires macOS 10.13 or later</div>
+    </div>
+  </main>
+
+  <div class="tick-rule" aria-hidden="true">
+    <span></span><span></span><span></span><span></span><span></span>
+    <span></span><span></span><span></span><span></span><span></span>
+    <span></span><span></span><span></span><span></span><span></span>
+    <span></span><span></span><span></span><span></span><span></span>
+    <span></span>
+  </div>
+
+  <section id="donate">
+    <div class="section-inner">
+      <div class="section-head">
+        <div class="eyebrow">support</div>
+        <h2>Donate</h2>
+        <p>Tap an address to copy it.</p>
+      </div>
+
+      <div class="donate-grid" id="donateGrid"></div>
+    </div>
+  </section>
+
+  <footer>
+    <p>
+      <span class="mono">crosshair</span> is free and open source ·
+      <a id="repoLink" href="#" target="_blank" rel="noopener">source on GitHub</a>
+    </p>
+  </footer>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    // ------------------------------------------------------------------
+    // CONFIG — edit these before publishing.
+    // ------------------------------------------------------------------
+    const CONFIG = {
+      // The GitHub repo the .dmg releases are published under.
+      githubOwner: '2yrk',        // TODO: confirm/replace
+      githubRepo: 'crosshair',    // TODO: confirm/replace with the actual repo name
+
+      // Donation addresses — these are PLACEHOLDERS. Replace all four
+      // before this goes live, or people will send funds nowhere useful.
+      wallets: [
+        { id: 'btc',  name: 'Bitcoin',  glyph: 'BTC',  address: 'bc1qxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx' },
+        { id: 'xmr',  name: 'Monero',   glyph: 'XMR',  address: '4xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx' },
+        { id: 'sol',  name: 'Solana',   glyph: 'SOL',  address: 'So1anaxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx' },
+        { id: 'usdt', name: 'USDT (ERC-20)', glyph: 'USDT', address: '0xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx' },
+      ]
+    };
+
+    // ------------------------------------------------------------------
+    // Download button — pulls the newest .dmg from GitHub Releases.
+    // ------------------------------------------------------------------
+    const downloadBtn = document.getElementById('downloadBtn');
+    const downloadLabel = document.getElementById('downloadLabel');
+    const downloadMeta = document.getElementById('downloadMeta');
+    const repoLink = document.getElementById('repoLink');
+
+    const repoUrl = `https://github.com/${CONFIG.githubOwner}/${CONFIG.githubRepo}`;
+    repoLink.href = repoUrl;
+
+    function formatBytes(bytes) {
+      const mb = bytes / (1024 * 1024);
+      return mb >= 1000 ? `${(mb / 1024).toFixed(1)} GB` : `${mb.toFixed(1)} MB`;
+    }
+
+    function setFailedState() {
+      downloadLabel.textContent = 'View releases on GitHub';
+      downloadBtn.href = `${repoUrl}/releases`;
+      downloadBtn.removeAttribute('aria-disabled');
+      downloadMeta.textContent = "Couldn't reach GitHub to check the latest version.";
+    }
+
+    async function loadLatestRelease() {
+      try {
+        const res = await fetch(`https://api.github.com/repos/${CONFIG.githubOwner}/${CONFIG.githubRepo}/releases/latest`);
+        if (!res.ok) throw new Error(`GitHub API responded ${res.status}`);
+        const release = await res.json();
+
+        const dmgAsset = (release.assets || []).find(a => a.name.toLowerCase().endsWith('.dmg'));
+        if (!dmgAsset) throw new Error('No .dmg asset on the latest release');
+
+        downloadBtn.href = dmgAsset.browser_download_url;
+        downloadBtn.removeAttribute('aria-disabled');
+        downloadLabel.textContent = 'Download for macOS';
+        downloadMeta.innerHTML = `${release.tag_name || 'latest'} · ${formatBytes(dmgAsset.size)} · <a href="${repoUrl}/releases" target="_blank" rel="noopener">release notes</a>`;
+      } catch (err) {
+        console.error('Failed to load latest release:', err);
+        setFailedState();
+      }
+    }
+
+    downloadBtn.addEventListener('click', (e) => {
+      if (downloadBtn.getAttribute('aria-disabled') === 'true') e.preventDefault();
+    });
+
+    loadLatestRelease();
+
+    // ------------------------------------------------------------------
+    // Donate grid — build buttons, copy address on click.
+    // ------------------------------------------------------------------
+    const donateGrid = document.getElementById('donateGrid');
+    const toast = document.getElementById('toast');
+    let toastTimer = null;
+
+    function showToast(text) {
+      toast.textContent = text;
+      toast.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toast.classList.remove('show'), 1800);
+    }
+
+    function truncateAddress(addr) {
+      if (addr.length <= 20) return addr;
+      return `${addr.slice(0, 10)}…${addr.slice(-8)}`;
+    }
+
+    async function copyToClipboard(text) {
+      try {
+        await navigator.clipboard.writeText(text);
+        return true;
+      } catch {
+        // Fallback for older browsers / non-secure contexts.
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        let ok = false;
+        try { ok = document.execCommand('copy'); } catch {}
+        document.body.removeChild(ta);
+        return ok;
+      }
+    }
+
+    CONFIG.wallets.forEach(coin => {
+      const btn = document.createElement('button');
+      btn.className = 'coin-btn';
+      btn.type = 'button';
+      btn.setAttribute('aria-label', `Copy ${coin.name} address`);
+      btn.innerHTML = `
+        <div class="coin-glyph ${coin.id}">${coin.glyph}</div>
+        <div class="coin-info">
+          <div class="coin-name">${coin.name}</div>
+          <div class="coin-addr">${truncateAddress(coin.address)}</div>
+        </div>
+        <div class="copy-indicator">Copy</div>
+      `;
+      btn.addEventListener('click', async () => {
+        const ok = await copyToClipboard(coin.address);
+        const indicator = btn.querySelector('.copy-indicator');
+        if (ok) {
+          btn.classList.add('copied');
+          indicator.textContent = 'Copied';
+          showToast(`${coin.name} address copied`);
+          setTimeout(() => {
+            btn.classList.remove('copied');
+            indicator.textContent = 'Copy';
+          }, 1600);
+        } else {
+          showToast('Copy failed — select and copy manually');
+        }
+      });
+      donateGrid.appendChild(btn);
+    });
+  </script>
+</body>
+</html>
