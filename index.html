@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>crosshair — a reticle for your screen</title>
+<title>crosshair z — a reticle for your screen</title>
 <meta name="description" content="A lightweight crosshair overlay for macOS. Lives in the menu bar.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -40,7 +40,6 @@
 
   a { color: inherit; }
 
-  /* ---------- Background tick rule ---------- */
   .tick-rule {
     display: flex;
     justify-content: space-between;
@@ -58,7 +57,6 @@
   }
   .tick-rule span:nth-child(5n+1) { height: 14px; background: #3a4148; }
 
-  /* ---------- Hero ---------- */
   .hero {
     position: relative;
     padding: 96px 24px 64px;
@@ -119,7 +117,6 @@
     font-size: 16px;
   }
 
-  /* ---------- Download button ---------- */
   .download-card {
     display: inline-flex;
     flex-direction: column;
@@ -179,7 +176,6 @@
     color: #565d63;
   }
 
-  /* ---------- Sections ---------- */
   section { padding: 56px 24px; }
   .section-inner { max-width: 640px; margin: 0 auto; }
 
@@ -200,7 +196,6 @@
     margin: 0;
   }
 
-  /* ---------- Donate ---------- */
   .donate-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
@@ -266,7 +261,6 @@
   }
   .coin-btn.copied .copy-indicator { color: var(--accent); }
 
-  /* ---------- Footer ---------- */
   footer {
     padding: 32px 24px 48px;
     text-align: center;
@@ -279,7 +273,6 @@
   footer a { text-decoration: underline; text-decoration-color: var(--line); text-underline-offset: 3px; }
   footer a:hover { color: var(--text); }
 
-  /* Toast */
   .toast {
     position: fixed;
     bottom: 24px;
@@ -387,27 +380,20 @@
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
   <script>
-    // ------------------------------------------------------------------
-    // CONFIG — edit these before publishing.
-    // ------------------------------------------------------------------
+    
     const CONFIG = {
-      // The GitHub repo the .dmg releases are published under.
-      githubOwner: '2yrk',        // TODO: confirm/replace
-      githubRepo: 'crosshair',    // TODO: confirm/replace with the actual repo name
+      githubOwner: 'OpioidAbuse',       
+      githubRepo: 'crosshair-z',
 
-      // Donation addresses — these are PLACEHOLDERS. Replace all four
-      // before this goes live, or people will send funds nowhere useful.
+
       wallets: [
-        { id: 'btc',  name: 'Bitcoin',  glyph: 'BTC',  address: 'bc1qxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx' },
-        { id: 'xmr',  name: 'Monero',   glyph: 'XMR',  address: '4xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx' },
-        { id: 'sol',  name: 'Solana',   glyph: 'SOL',  address: 'So1anaxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx' },
-        { id: 'usdt', name: 'USDT (ERC-20)', glyph: 'USDT', address: '0xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx' },
+        { id: 'btc',  name: 'Bitcoin',  glyph: 'BTC',  address: 'bc1qyvsp98p4l0e8rdrc37qa6sjllafqw2gapfqzp0' },
+        { id: 'xmr',  name: 'Ethereum',   glyph: 'ETH',  address: '0x809499057FA083CcAef7b77eED18737e78Ae88a7' },
+        { id: 'sol',  name: 'Solana',   glyph: 'SOL',  address: 'H46wnWxj3QPsXJXqCZ96aLMZDjQTh5sGi8M8imPWTspi' },
+        { id: 'usdt', name: 'USDT (ERC-20)', glyph: 'USDT', address: '0x809499057FA083CcAef7b77eED18737e78Ae88a7' },
       ]
     };
 
-    // ------------------------------------------------------------------
-    // Download button — pulls the newest .dmg from GitHub Releases.
-    // ------------------------------------------------------------------
     const downloadBtn = document.getElementById('downloadBtn');
     const downloadLabel = document.getElementById('downloadLabel');
     const downloadMeta = document.getElementById('downloadMeta');
@@ -453,9 +439,6 @@
 
     loadLatestRelease();
 
-    // ------------------------------------------------------------------
-    // Donate grid — build buttons, copy address on click.
-    // ------------------------------------------------------------------
     const donateGrid = document.getElementById('donateGrid');
     const toast = document.getElementById('toast');
     let toastTimer = null;
